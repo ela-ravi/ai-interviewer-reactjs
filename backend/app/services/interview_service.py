@@ -47,7 +47,9 @@ class InterviewService:
     
     def __init__(self):
         self.sessions: Dict[str, InterviewSession] = {}
-        self.session_timeout = timedelta(hours=2)  # Sessions expire after 2 hours
+        # Get session timeout from environment or default to 2 hours
+        timeout_hours = int(os.getenv('SESSION_TIMEOUT_HOURS', '2'))
+        self.session_timeout = timedelta(hours=timeout_hours)
     
     def _cleanup_expired_sessions(self):
         """Remove expired sessions"""

@@ -19,9 +19,9 @@ class InterviewAgents:
         
         # Create model client for OpenRouter with Mistral AI
         self.model_client = OpenAIChatCompletionClient(
-            model="mistralai/mistral-small-creative",
+            model=os.getenv("MODEL", "mistralai/mistral-small-creative"),
             api_key=os.getenv("OPENROUTER_API_KEY"),
-            base_url="https://openrouter.ai/api/v1",
+            base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
             model_info={
                 "vision": False,
                 "function_calling": True,
