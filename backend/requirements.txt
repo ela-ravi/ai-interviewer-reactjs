@@ -1,0 +1,8 @@
+flask==3.1.0
+flask-cors==5.0.0
+autogen-agentchat==0.7.5
+autogen-ext[openai]==0.7.5
+python-dotenv==1.0.1
+gunicorn==23.0.0
+redis==5.2.1
+
