@@ -71,24 +71,27 @@ def create_app():
     # #region agent log
     @app.before_request
     def log_request():
-        import json
-        log_data = {
-            "sessionId": "debug-session",
-            "runId": "run1",
-            "hypothesisId": "A",
-            "location": "app/__init__.py:before_request",
-            "message": "Incoming request",
-            "data": {
-                "method": request.method,
-                "path": request.path,
-                "url": request.url,
-                "endpoint": request.endpoint,
-                "blueprint": request.blueprint if hasattr(request, 'blueprint') else None
-            },
-            "timestamp": __import__('time').time() * 1000
-        }
-        with open('/Volumes/Development/Practise/ai-interviewer/.cursor/debug.log', 'a') as f:
-            f.write(json.dumps(log_data) + '\n')
+        try:
+            import json
+            log_data = {
+                "sessionId": "debug-session",
+                "runId": "run1",
+                "hypothesisId": "A",
+                "location": "app/__init__.py:before_request",
+                "message": "Incoming request",
+                "data": {
+                    "method": request.method,
+                    "path": request.path,
+                    "url": request.url,
+                    "endpoint": request.endpoint,
+                    "blueprint": request.blueprint if hasattr(request, 'blueprint') else None
+                },
+                "timestamp": __import__('time').time() * 1000
+            }
+            with open('/Volumes/Development/Practise/ai-interviewer/.cursor/debug.log', 'a') as f:
+                f.write(json.dumps(log_data) + '\n')
+        except Exception:
+            pass  # Don't fail if logging fails
     # #endregion
     
     # Health check endpoint
