@@ -4,18 +4,10 @@ Interview API routes
 from flask import Blueprint, request, jsonify
 from functools import wraps
 import asyncio
-from flask_cors import CORS
 from app.services.interview_service import interview_service
 
-# Create blueprint
+# Create blueprint (CORS handled globally in app/__init__.py)
 interview_bp = Blueprint('interview', __name__)
-
-# Enable CORS for this blueprint
-CORS(
-    interview_bp,
-    resources={r"/interview/*": {"origins": "*"}},
-    supports_credentials=False
-)
 
 
 def handle_errors(f):
@@ -60,11 +52,13 @@ def handle_errors(f):
 
 # -------------------- ROUTES -------------------- #
 
-@interview_bp.route('/interview/create', methods=['POST'])
+@interview_bp.route('/interview/create', methods=['POST', 'OPTIONS'])
 @handle_errors
 def create_interview():
     """
     Create a new interview session
+    
+    Flask-CORS handles OPTIONS automatically, but route must accept it
     """
     data = request.get_json()
 
@@ -84,7 +78,7 @@ def create_interview():
     }), 201
 
 
-@interview_bp.route('/interview/<session_id>/start', methods=['POST'])
+@interview_bp.route('/interview/<session_id>/start', methods=['POST', 'OPTIONS'])
 @handle_errors
 async def start_interview(session_id):
     """
@@ -94,7 +88,7 @@ async def start_interview(session_id):
     return jsonify(result), 200
 
 
-@interview_bp.route('/interview/<session_id>/answer', methods=['POST'])
+@interview_bp.route('/interview/<session_id>/answer', methods=['POST', 'OPTIONS'])
 @handle_errors
 async def submit_answer(session_id):
     """
@@ -113,7 +107,7 @@ async def submit_answer(session_id):
     return jsonify(result), 200
 
 
-@interview_bp.route('/interview/<session_id>/next-question', methods=['POST'])
+@interview_bp.route('/interview/<session_id>/next-question', methods=['POST', 'OPTIONS'])
 @handle_errors
 async def get_next_question(session_id):
     """
@@ -123,7 +117,7 @@ async def get_next_question(session_id):
     return jsonify(result), 200
 
 
-@interview_bp.route('/interview/<session_id>/end', methods=['POST'])
+@interview_bp.route('/interview/<session_id>/end', methods=['POST', 'OPTIONS'])
 @handle_errors
 async def end_interview(session_id):
     """
@@ -133,7 +127,7 @@ async def end_interview(session_id):
     return jsonify(result), 200
 
 
-@interview_bp.route('/interview/<session_id>', methods=['GET'])
+@interview_bp.route('/interview/<session_id>', methods=['GET', 'OPTIONS'])
 @handle_errors
 def get_session_info(session_id):
     """
@@ -143,7 +137,7 @@ def get_session_info(session_id):
     return jsonify(info), 200
 
 
-@interview_bp.route('/interview/<session_id>', methods=['DELETE'])
+@interview_bp.route('/interview/<session_id>', methods=['DELETE', 'OPTIONS'])
 @handle_errors
 def delete_session(session_id):
     """
