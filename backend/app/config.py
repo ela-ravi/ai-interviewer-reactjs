@@ -11,7 +11,7 @@ class Config:
     """Base configuration"""
     # Flask Configuration
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-    PORT = int(os.getenv('PORT', 5000))
+    PORT = int(os.getenv('PORT', 5001))
     
     # OpenRouter API Configuration
     OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
