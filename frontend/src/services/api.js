@@ -14,6 +14,27 @@ const api = axios.create({
 export const interviewAPI = {
   // Create a new interview session
   createInterview: async (technology, position) => {
+    // #region agent log
+    const logData = {
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'A',
+      location: 'services/api.js:createInterview',
+      message: 'Frontend API call',
+      data: {
+        baseURL: API_BASE_URL,
+        path: '/interview/create',
+        fullURL: API_BASE_URL + '/interview/create',
+        method: 'POST'
+      },
+      timestamp: Date.now()
+    };
+    fetch('http://127.0.0.1:7243/ingest/53e08bbd-97d2-4d2e-a9de-853ed95b6016', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logData)
+    }).catch(() => {});
+    // #endregion
     const response = await api.post('/interview/create', {
       technology,
       position,

@@ -60,6 +60,27 @@ def create_interview():
     
     Flask-CORS handles OPTIONS automatically, but route must accept it
     """
+    # #region agent log
+    import json
+    log_data = {
+        "sessionId": "debug-session",
+        "runId": "run1",
+        "hypothesisId": "B",
+        "location": "routes/interview.py:create_interview",
+        "message": "Route handler called",
+        "data": {
+            "method": request.method,
+            "path": request.path,
+            "url": request.url,
+            "endpoint": request.endpoint,
+            "blueprint": request.blueprint if hasattr(request, 'blueprint') else None
+        },
+        "timestamp": __import__('time').time() * 1000
+    }
+    with open('/Volumes/Development/Practise/ai-interviewer/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps(log_data) + '\n')
+    # #endregion
+    
     # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
         return '', 200
