@@ -19,27 +19,50 @@ def create_app():
     
     # Get CORS configuration
     cors_origins = os.getenv('CORS_ORIGINS', '')
+    flask_env = os.getenv('FLASK_ENV', 'development')
     
-    # Apply CORS globally - Simple and clean configuration
-    if not cors_origins or cors_origins == '*':
-        # Development: Allow all origins
-        print("🔓 CORS: Allowing all origins (development mode)")
-        CORS(app, 
-             origins="*",
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "Accept"],
-             supports_credentials=False,
-             max_age=3600)
-    else:
-        # Production: Allow specific origins
+    # Apply CORS globally - Production-safe configuration
+    if flask_env == 'production' and cors_origins and cors_origins != '*':
+        # Production: Strict CORS with specific origins
         origins_list = [origin.strip() for origin in cors_origins.split(',') if origin.strip()]
-        print(f"🔒 CORS: Allowing origins: {origins_list}")
+        print(f"🔒 CORS (Production): Allowing specific origins: {origins_list}")
         CORS(app,
-             origins=origins_list,
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "Accept"],
-             supports_credentials=True,
-             max_age=3600)
+             resources={
+                 r"/*": {
+                     "origins": origins_list,
+                     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                     "allow_headers": [
+                         "Content-Type",
+                         "Authorization",
+                         "Accept",
+                         "X-Requested-With",
+                         "Cache-Control"
+                     ],
+                     "expose_headers": ["Content-Type"],
+                     "supports_credentials": False,  # No cookies needed
+                     "max_age": 3600
+                 }
+             })
+    else:
+        # Development: Allow all origins
+        print(f"🔓 CORS (Development): Allowing all origins")
+        CORS(app,
+             resources={
+                 r"/*": {
+                     "origins": "*",
+                     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                     "allow_headers": [
+                         "Content-Type",
+                         "Authorization",
+                         "Accept",
+                         "X-Requested-With",
+                         "Cache-Control"
+                     ],
+                     "expose_headers": ["Content-Type"],
+                     "supports_credentials": False,
+                     "max_age": 3600
+                 }
+             })
     
     # Register blueprints
     from app.routes.interview import interview_bp
