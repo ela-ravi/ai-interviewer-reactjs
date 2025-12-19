@@ -76,5 +76,51 @@ def create_app():
     def health():
         return {'status': 'healthy', 'service': 'ai-interviewer-backend'}, 200
     
+    # Test endpoint for production debugging
+    @app.route('/api/test')
+    def test_endpoint():
+        """Test endpoint to verify backend configuration"""
+        import sys
+        from datetime import datetime
+        
+        # Get CORS configuration (safe to expose)
+        cors_origins = os.getenv('CORS_ORIGINS', '')
+        cors_mode = 'wildcard (*)' if not cors_origins or cors_origins == '*' else f'specific origins: {cors_origins}'
+        
+        return jsonify({
+            'status': 'ok',
+            'message': 'Backend is running successfully',
+            'timestamp': datetime.utcnow().isoformat(),
+            'environment': {
+                'flask_env': os.getenv('FLASK_ENV', 'development'),
+                'debug_mode': os.getenv('FLASK_DEBUG', 'False'),
+                'python_version': sys.version,
+            },
+            'cors': {
+                'mode': cors_mode,
+                'enabled': True,
+                'methods': ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+                'headers': ['Content-Type', 'Authorization', 'Accept']
+            },
+            'api': {
+                'base_url': request.host_url.rstrip('/'),
+                'endpoints': {
+                    'health': '/health',
+                    'test': '/api/test',
+                    'create_interview': '/api/interview/create',
+                    'start_interview': '/api/interview/<session_id>/start',
+                    'submit_answer': '/api/interview/<session_id>/answer',
+                    'next_question': '/api/interview/<session_id>/next-question',
+                    'end_interview': '/api/interview/<session_id>/end',
+                    'get_session': '/api/interview/<session_id>',
+                }
+            },
+            'model': {
+                'provider': 'OpenRouter',
+                'model': os.getenv('MODEL', 'mistralai/mistral-small-creative'),
+                'api_key_configured': bool(os.getenv('OPENROUTER_API_KEY'))
+            }
+        }), 200
+    
     return app
 

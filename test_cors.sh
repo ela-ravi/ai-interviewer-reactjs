@@ -10,6 +10,19 @@ echo "🔍 Testing Backend CORS Configuration"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# Test 0: Backend Test Endpoint (NEW!)
+echo "0️⃣  Testing Backend Configuration..."
+TEST_RESPONSE=$(curl -k -s "$BACKEND_URL/api/test")
+if [[ $TEST_RESPONSE == *"\"status\":\"ok\""* ]]; then
+    echo "   ✅ Backend test endpoint working"
+    echo "   Backend Info:"
+    echo "$TEST_RESPONSE" | python3 -m json.tool 2>/dev/null | head -20 || echo "$TEST_RESPONSE"
+else
+    echo "   ⚠️  Test endpoint not available (might be old deployment)"
+    echo "   Response: $TEST_RESPONSE"
+fi
+echo ""
+
 # Test 1: Health Check
 echo "1️⃣  Testing Health Endpoint..."
 HEALTH=$(curl -k -s "$BACKEND_URL/health")
