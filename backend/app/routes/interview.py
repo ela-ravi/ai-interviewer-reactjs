@@ -115,8 +115,11 @@ async def start_interview(session_id):
     Start an interview and get the first question
     """
     # OPTIONS requests should return immediately (Flask-CORS handles headers)
+    # Use make_response for proper async compatibility
     if request.method == 'OPTIONS':
-        return jsonify({}), 200
+        from flask import make_response
+        response = make_response('', 200)
+        return response
     
     # #region agent log
     try:
@@ -152,7 +155,9 @@ async def submit_answer(session_id):
     """
     # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return jsonify({}), 200
+        from flask import make_response
+        response = make_response('', 200)
+        return response
         
     data = request.get_json()
 
@@ -175,7 +180,9 @@ async def get_next_question(session_id):
     """
     # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return jsonify({}), 200
+        from flask import make_response
+        response = make_response('', 200)
+        return response
         
     result = await interview_service.get_next_question(session_id)
     return jsonify(result), 200
@@ -189,7 +196,9 @@ async def end_interview(session_id):
     """
     # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return jsonify({}), 200
+        from flask import make_response
+        response = make_response('', 200)
+        return response
         
     result = await interview_service.end_interview(session_id)
     return jsonify(result), 200
