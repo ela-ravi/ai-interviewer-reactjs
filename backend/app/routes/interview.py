@@ -15,8 +15,15 @@ def handle_errors(f):
 
     @wraps(f)
     async def async_wrapper(*args, **kwargs):
+        # Handle OPTIONS before calling the async function
+        # Flask-CORS will add headers automatically
+        from flask import request, make_response
+        if request.method == 'OPTIONS':
+            return make_response('', 200)
+        
         try:
-            return await f(*args, **kwargs)
+            result = await f(*args, **kwargs)
+            return result
         except ValueError as e:
             import traceback
             traceback.print_exc()
@@ -31,6 +38,11 @@ def handle_errors(f):
 
     @wraps(f)
     def sync_wrapper(*args, **kwargs):
+        # Handle OPTIONS before calling the sync function
+        from flask import request, make_response
+        if request.method == 'OPTIONS':
+            return make_response('', 200)
+        
         try:
             return f(*args, **kwargs)
         except ValueError as e:
@@ -60,12 +72,7 @@ def create_interview():
     
     Flask-CORS handles OPTIONS automatically, but route must accept it
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    # Check this FIRST before any other logic to avoid errors
-    # Flask-CORS will add CORS headers automatically
-    if request.method == 'OPTIONS':
-        return jsonify({}), 200
-    
+    # OPTIONS is handled by @handle_errors decorator
     # #region agent log
     try:
         import json
@@ -114,13 +121,7 @@ async def start_interview(session_id):
     """
     Start an interview and get the first question
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    # Use make_response for proper async compatibility
-    if request.method == 'OPTIONS':
-        from flask import make_response
-        response = make_response('', 200)
-        return response
-    
+    # OPTIONS is handled by @handle_errors decorator
     # #region agent log
     try:
         import json
@@ -153,12 +154,7 @@ async def submit_answer(session_id):
     """
     Submit an answer to the current question
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    if request.method == 'OPTIONS':
-        from flask import make_response
-        response = make_response('', 200)
-        return response
-        
+    # OPTIONS is handled by @handle_errors decorator
     data = request.get_json()
 
     if not data or 'answer' not in data:
@@ -178,12 +174,7 @@ async def get_next_question(session_id):
     """
     Get the next question
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    if request.method == 'OPTIONS':
-        from flask import make_response
-        response = make_response('', 200)
-        return response
-        
+    # OPTIONS is handled by @handle_errors decorator
     result = await interview_service.get_next_question(session_id)
     return jsonify(result), 200
 
@@ -194,12 +185,7 @@ async def end_interview(session_id):
     """
     End the interview and return summary
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    if request.method == 'OPTIONS':
-        from flask import make_response
-        response = make_response('', 200)
-        return response
-        
+    # OPTIONS is handled by @handle_errors decorator
     result = await interview_service.end_interview(session_id)
     return jsonify(result), 200
 
@@ -210,10 +196,7 @@ def get_session_info(session_id):
     """
     Get session information
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    if request.method == 'OPTIONS':
-        return jsonify({}), 200
-        
+    # OPTIONS is handled by @handle_errors decorator
     info = interview_service.get_session_info(session_id)
     return jsonify(info), 200
 
@@ -224,10 +207,7 @@ def delete_session(session_id):
     """
     Delete a session
     """
-    # OPTIONS requests should return immediately (Flask-CORS handles headers)
-    if request.method == 'OPTIONS':
-        return jsonify({}), 200
-        
+    # OPTIONS is handled by @handle_errors decorator
     success = interview_service.delete_session(session_id)
 
     if success:
