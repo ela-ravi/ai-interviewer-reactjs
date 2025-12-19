@@ -114,8 +114,31 @@ async def start_interview(session_id):
     """
     Start an interview and get the first question
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({}), 200
+    
+    # #region agent log
+    try:
+        import json
+        log_data = {
+            "sessionId": "debug-session",
+            "runId": "run1",
+            "hypothesisId": "C",
+            "location": "routes/interview.py:start_interview",
+            "message": "Start interview route called",
+            "data": {
+                "method": request.method,
+                "session_id": session_id,
+                "path": request.path
+            },
+            "timestamp": __import__('time').time() * 1000
+        }
+        with open('/Volumes/Development/Practise/ai-interviewer/.cursor/debug.log', 'a') as f:
+            f.write(json.dumps(log_data) + '\n')
+    except Exception:
+        pass
+    # #endregion
         
     result = await interview_service.start_interview(session_id)
     return jsonify(result), 200
@@ -127,8 +150,9 @@ async def submit_answer(session_id):
     """
     Submit an answer to the current question
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({}), 200
         
     data = request.get_json()
 
@@ -149,8 +173,9 @@ async def get_next_question(session_id):
     """
     Get the next question
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({}), 200
         
     result = await interview_service.get_next_question(session_id)
     return jsonify(result), 200
@@ -162,8 +187,9 @@ async def end_interview(session_id):
     """
     End the interview and return summary
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({}), 200
         
     result = await interview_service.end_interview(session_id)
     return jsonify(result), 200
@@ -175,8 +201,9 @@ def get_session_info(session_id):
     """
     Get session information
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({}), 200
         
     info = interview_service.get_session_info(session_id)
     return jsonify(info), 200
@@ -188,8 +215,9 @@ def delete_session(session_id):
     """
     Delete a session
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({}), 200
         
     success = interview_service.delete_session(session_id)
 
