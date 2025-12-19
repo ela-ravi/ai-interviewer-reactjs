@@ -1,7 +1,17 @@
 import axios from 'axios';
 import { config } from '../config';
 
-const API_BASE_URL = config.apiUrl;
+// Normalize API base URL to always end with /api
+// Handles cases where VITE_API_URL might be set without /api suffix
+let API_BASE_URL = config.apiUrl.trim();
+if (!API_BASE_URL.endsWith('/api')) {
+  // If it doesn't end with /api, add it
+  if (API_BASE_URL.endsWith('/')) {
+    API_BASE_URL = API_BASE_URL + 'api';
+  } else {
+    API_BASE_URL = API_BASE_URL + '/api';
+  }
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -20,11 +30,12 @@ export const interviewAPI = {
       runId: 'run1',
       hypothesisId: 'A',
       location: 'services/api.js:createInterview',
-      message: 'Frontend API call',
+      message: 'Frontend API call (normalized)',
       data: {
-        baseURL: API_BASE_URL,
+        originalApiUrl: config.apiUrl,
+        normalizedBaseURL: API_BASE_URL,
         path: '/interview/create',
-        fullURL: API_BASE_URL + '/interview/create',
+        expectedFullURL: API_BASE_URL + '/interview/create',
         method: 'POST'
       },
       timestamp: Date.now()
