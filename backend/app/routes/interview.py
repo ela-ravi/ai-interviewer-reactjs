@@ -2,25 +2,31 @@
 Interview API routes
 """
 from flask import Blueprint, request, jsonify
-import asyncio
 from functools import wraps
 from app.services.interview_service import interview_service
 
 interview_bp = Blueprint('interview', __name__)
 
 
-def async_route(f):
-    """Decorator to handle async routes in Flask"""
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        return asyncio.run(f(*args, **kwargs))
-    return wrapper
-
-
 def handle_errors(f):
     """Decorator to handle errors consistently"""
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    async def async_wrapper(*args, **kwargs):
+        try:
+            return await f(*args, **kwargs)
+        except ValueError as e:
+            import traceback
+            print(f"ValueError: {str(e)}")
+            traceback.print_exc()
+            return jsonify({'error': str(e)}), 400
+        except Exception as e:
+            import traceback
+            print(f"Error in {f.__name__}: {str(e)}")
+            traceback.print_exc()
+            return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+    
+    @wraps(f)
+    def sync_wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
         except ValueError as e:
@@ -33,7 +39,12 @@ def handle_errors(f):
             print(f"Error in {f.__name__}: {str(e)}")
             traceback.print_exc()
             return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
-    return wrapper
+    
+    # Check if function is async
+    import asyncio
+    if asyncio.iscoroutinefunction(f):
+        return async_wrapper
+    return sync_wrapper
 
 
 @interview_bp.route('/interview/create', methods=['POST', 'OPTIONS'])
@@ -79,7 +90,6 @@ def create_interview():
 
 @interview_bp.route('/interview/<session_id>/start', methods=['POST'])
 @handle_errors
-@async_route
 async def start_interview(session_id):
     """
     Start an interview and get the first question
@@ -97,7 +107,6 @@ async def start_interview(session_id):
 
 @interview_bp.route('/interview/<session_id>/answer', methods=['POST'])
 @handle_errors
-@async_route
 async def submit_answer(session_id):
     """
     Submit an answer to the current question
@@ -131,7 +140,6 @@ async def submit_answer(session_id):
 
 @interview_bp.route('/interview/<session_id>/next-question', methods=['POST'])
 @handle_errors
-@async_route
 async def get_next_question(session_id):
     """
     Get the next question
@@ -149,7 +157,6 @@ async def get_next_question(session_id):
 
 @interview_bp.route('/interview/<session_id>/end', methods=['POST'])
 @handle_errors
-@async_route
 async def end_interview(session_id):
     """
     End the interview and get summary
