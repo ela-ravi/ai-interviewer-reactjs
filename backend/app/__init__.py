@@ -1,8 +1,8 @@
 """
 Flask application factory
 """
-from flask import Flask
-from flask_cors import CORS
+from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 import os
 from dotenv import load_dotenv
 
@@ -17,29 +17,55 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['OPENROUTER_API_KEY'] = os.getenv('OPENROUTER_API_KEY')
     
-    # Enable CORS - Simpler configuration that works reliably
-    cors_origins = os.getenv('CORS_ORIGINS', '*')
+    # Get CORS configuration
+    cors_origins = os.getenv('CORS_ORIGINS', '')
     
-    if cors_origins == '*' or cors_origins == '':
-        # Development or not set: Allow all origins
-        CORS(app, 
-             origins="*",
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "Accept"],
-             expose_headers=["Content-Type"],
-             supports_credentials=False,
-             send_wildcard=True,
-             always_send=True)
+    # Configure CORS settings based on environment
+    if not cors_origins or cors_origins == '*':
+        # Development: Allow all origins
+        print("🔓 CORS: Allowing all origins (development mode)")
+        cors_config = {
+            'origins': '*',
+            'methods': ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            'allow_headers': ['Content-Type', 'Authorization', 'Accept'],
+            'expose_headers': ['Content-Type'],
+            'supports_credentials': False,
+            'max_age': 3600
+        }
     else:
         # Production: Allow specific origins
         origins_list = [origin.strip() for origin in cors_origins.split(',') if origin.strip()]
-        CORS(app,
-             origins=origins_list,
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "Accept"],
-             expose_headers=["Content-Type"],
-             supports_credentials=True,
-             always_send=True)
+        print(f"🔒 CORS: Allowing origins: {origins_list}")
+        cors_config = {
+            'origins': origins_list,
+            'methods': ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            'allow_headers': ['Content-Type', 'Authorization', 'Accept'],
+            'expose_headers': ['Content-Type'],
+            'supports_credentials': True,
+            'max_age': 3600
+        }
+    
+    # Initialize CORS
+    CORS(app, resources={r"/*": cors_config})
+    
+    # Add after_request handler for additional CORS headers
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get('Origin')
+        if origin:
+            if cors_config['origins'] == '*':
+                response.headers['Access-Control-Allow-Origin'] = '*'
+            elif origin in cors_config.get('origins', []):
+                response.headers['Access-Control-Allow-Origin'] = origin
+        
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept'
+        response.headers['Access-Control-Max-Age'] = '3600'
+        
+        if cors_config.get('supports_credentials'):
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+        
+        return response
     
     # Register blueprints
     from app.routes.interview import interview_bp

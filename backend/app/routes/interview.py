@@ -36,7 +36,7 @@ def handle_errors(f):
     return wrapper
 
 
-@interview_bp.route('/interview/create', methods=['POST'])
+@interview_bp.route('/interview/create', methods=['POST', 'OPTIONS'])
 @handle_errors
 def create_interview():
     """
@@ -55,6 +55,10 @@ def create_interview():
         "position": "Senior Developer"
     }
     """
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     data = request.get_json()
     
     if not data or 'technology' not in data or 'position' not in data:
