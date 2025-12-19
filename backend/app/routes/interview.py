@@ -60,6 +60,10 @@ def create_interview():
     
     Flask-CORS handles OPTIONS automatically, but route must accept it
     """
+    # OPTIONS requests should return immediately (Flask-CORS handles headers)
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     data = request.get_json()
 
     if not data or 'technology' not in data or 'position' not in data:
@@ -84,6 +88,9 @@ async def start_interview(session_id):
     """
     Start an interview and get the first question
     """
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     result = await interview_service.start_interview(session_id)
     return jsonify(result), 200
 
@@ -94,6 +101,9 @@ async def submit_answer(session_id):
     """
     Submit an answer to the current question
     """
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     data = request.get_json()
 
     if not data or 'answer' not in data:
@@ -113,6 +123,9 @@ async def get_next_question(session_id):
     """
     Get the next question
     """
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     result = await interview_service.get_next_question(session_id)
     return jsonify(result), 200
 
@@ -123,6 +136,9 @@ async def end_interview(session_id):
     """
     End the interview and return summary
     """
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     result = await interview_service.end_interview(session_id)
     return jsonify(result), 200
 
@@ -133,6 +149,9 @@ def get_session_info(session_id):
     """
     Get session information
     """
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     info = interview_service.get_session_info(session_id)
     return jsonify(info), 200
 
@@ -143,6 +162,9 @@ def delete_session(session_id):
     """
     Delete a session
     """
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     success = interview_service.delete_session(session_id)
 
     if success:
