@@ -22,6 +22,8 @@ class InterviewAgents:
             model=os.getenv("MODEL", "mistralai/mistral-small-creative"),
             api_key=os.getenv("OPENROUTER_API_KEY"),
             base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            # OpenRouter bills the model's full output window (131072) unless this is set.
+            max_tokens=int(os.getenv("MAX_TOKENS", "2048")),
             model_info={
                 "vision": False,
                 "function_calling": True,
