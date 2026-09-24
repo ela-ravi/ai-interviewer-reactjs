@@ -119,7 +119,7 @@ def start_interview(technology: str, position: str):
         st.rerun()
     except Exception as e:
         st.error(f"❌ Error starting interview: {str(e)}")
-        st.info("💡 Make sure your OpenRouter API key is set in the .env file")
+        st.info("💡 Make sure LLM_API_KEY is set in the .env file")
 
 
 async def submit_answer_async(answer: str):
@@ -191,11 +191,11 @@ def main():
     st.markdown('<div class="sub-header">Multi-Agent Interview System powered by AI</div>', unsafe_allow_html=True)
     
     # Check for API key
-    if not os.getenv("OPENROUTER_API_KEY"):
-        st.error("❌ OpenRouter API key not found!")
-        st.info("📝 Please create a .env file with your OPENROUTER_API_KEY")
-        st.code("OPENROUTER_API_KEY=your_openrouter_api_key_here")
-        st.info("💡 Get your API key from: https://openrouter.ai/keys")
+    if not (os.getenv("LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY")):
+        provider = os.getenv("LLM_PROVIDER") or "your LLM provider"
+        st.error(f"❌ {provider} API key not found!")
+        st.info("📝 Please create a .env file with your LLM_API_KEY")
+        st.code("LLM_API_KEY=your_api_key_here\nLLM_PROVIDER=Groq\nLLM_BASE_URL=https://api.groq.com/openai/v1")
         return
     
     # Sidebar for interview setup

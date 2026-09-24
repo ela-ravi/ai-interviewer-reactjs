@@ -26,10 +26,12 @@ if __name__ == '__main__':
     print(f"   Debug mode: {debug}")
     print(f"   Model: {Config.MODEL}")
     print(f"   CORS Origins: {Config.CORS_ORIGINS}")
-    print(f"🔑 OpenRouter API Key: {'✅ Configured' if Config.OPENROUTER_API_KEY else '❌ Missing'}")
+    print(f"🔑 LLM API Key: {'✅ Configured' if Config.LLM_API_KEY else '❌ Missing'}")
+    print(f"   Provider: {Config.LLM_PROVIDER or '(unset)'}")
+    print(f"   Base URL: {Config.LLM_BASE_URL}")
     
-    if not Config.OPENROUTER_API_KEY:
-        print("⚠️  WARNING: OPENROUTER_API_KEY not set! The application will not work.")
+    if not Config.LLM_API_KEY:
+        print("⚠️  WARNING: LLM_API_KEY not set! The application will not work.")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
 

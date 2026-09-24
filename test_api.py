@@ -11,37 +11,29 @@ load_dotenv()
 async def test_openrouter_connection():
     """Test OpenRouter API connection with Mistral AI"""
     
-    print("🔍 Testing OpenRouter API Configuration...\n")
+    provider = os.getenv("LLM_PROVIDER") or "LLM"
+    print(f"🔍 Testing {provider} API configuration...\n")
     
-    # Check API key
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     
     if not api_key:
-        print("❌ OPENROUTER_API_KEY not found in .env file")
-        print("💡 Please create a .env file with your OpenRouter API key")
-        print("\nExample:")
-        print("OPENROUTER_API_KEY=your_key_here")
-        return False
-    
-    if api_key == "your_openrouter_api_key_here":
-        print("❌ Please replace 'your_openrouter_api_key_here' with your actual API key")
-        print("💡 Get your key from: https://openrouter.ai/keys")
+        print("❌ LLM_API_KEY not found in .env file")
+        print("💡 Set LLM_API_KEY, LLM_BASE_URL, and LLM_PROVIDER")
         return False
     
     print("✅ API key found in .env file")
     print(f"   Key starts with: {api_key[:10]}...")
     
-    # Test API connection
-    print("\n🔄 Testing connection to OpenRouter with Mistral AI...")
+    print(f"\n🔄 Testing connection to {provider}...")
     
     try:
         from autogen_ext.models.openai import OpenAIChatCompletionClient
         from autogen_core.models import UserMessage
         
         client = OpenAIChatCompletionClient(
-            model="mistralai/mistral-small-creative",
+            model=os.getenv("MODEL", "mistralai/mistral-small-2603"),
             api_key=api_key,
-            base_url="https://openrouter.ai/api/v1",
+            base_url=os.getenv("LLM_BASE_URL") or os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1",
             model_info={
                 "vision": False,
                 "function_calling": True,

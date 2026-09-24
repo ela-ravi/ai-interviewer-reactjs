@@ -12,10 +12,13 @@ services:
     environment:
       - FLASK_ENV=${FLASK_ENV:-development}
       - FLASK_DEBUG=${FLASK_DEBUG:-True}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
-      - MODEL=${MODEL:-mistralai/mistral-small-creative}
+      - MODEL=${MODEL:-}
       - TEMPERATURE=${TEMPERATURE:-0.7}
       - SESSION_TIMEOUT_HOURS=${SESSION_TIMEOUT_HOURS:-2}
     volumes:

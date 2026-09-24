@@ -8,10 +8,14 @@ function App() {
   const [sessionId, setSessionId] = useState(null)
   const [interviewData, setInterviewData] = useState(null)
   const [modelName, setModelName] = useState(null)
+  const [providerName, setProviderName] = useState(null)
 
   useEffect(() => {
     checkHealth()
-      .then((data) => setModelName(data?.model || null))
+      .then((data) => {
+        setModelName(data?.model || null)
+        setProviderName(data?.provider || null)
+      })
       .catch(() => {})
   }, [])
 
@@ -47,7 +51,13 @@ function App() {
 
       <footer className="app-footer">
         <p>
-          {modelName ? `Powered by ${modelName} via OpenRouter` : 'Powered by OpenRouter'}
+          {modelName && providerName
+            ? `Powered by ${modelName} via ${providerName}`
+            : modelName
+              ? `Powered by ${modelName}`
+              : providerName
+                ? `Powered by ${providerName}`
+                : 'Powered by AI'}
           {' | Built with React & Flask'}
         </p>
       </footer>

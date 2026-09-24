@@ -17,12 +17,15 @@ class InterviewAgents:
         self.technology = technology
         self.position = position
         
-        # Create model client for OpenRouter with Mistral AI
+        # LLM_API_KEY / LLM_BASE_URL, with the old OpenRouter names as fallback.
+        model = os.getenv("MODEL") or ""
+        if not model:
+            raise ValueError("MODEL is not set")
         self.model_client = OpenAIChatCompletionClient(
-            model=os.getenv("MODEL", "mistralai/mistral-small-creative"),
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-            # OpenRouter bills the model's full output window (131072) unless this is set.
+            model=model,
+            api_key=os.getenv("LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY"),
+            base_url=os.getenv("LLM_BASE_URL") or os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1",
+            # Providers bill the model's full output window unless this is set.
             max_tokens=int(os.getenv("MAX_TOKENS", "2048")),
             model_info={
                 "vision": False,

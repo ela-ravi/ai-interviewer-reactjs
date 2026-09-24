@@ -101,7 +101,8 @@ def create_app():
         return {
             'status': 'healthy',
             'service': 'ai-interviewer-backend',
-            'model': os.getenv('MODEL', 'mistralai/mistral-small-creative'),
+            'model': os.getenv('MODEL') or '',
+            'provider': os.getenv('LLM_PROVIDER') or '',
         }, 200
     
     # Test endpoint for production debugging
@@ -144,9 +145,9 @@ def create_app():
                 }
             },
             'model': {
-                'provider': 'OpenRouter',
-                'model': os.getenv('MODEL', 'mistralai/mistral-small-creative'),
-                'api_key_configured': bool(os.getenv('OPENROUTER_API_KEY'))
+                'provider': os.getenv('LLM_PROVIDER') or '',
+                'model': os.getenv('MODEL') or '',
+                'api_key_configured': bool(os.getenv('LLM_API_KEY') or os.getenv('OPENROUTER_API_KEY'))
             }
         }), 200
     

@@ -13,12 +13,15 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     PORT = int(os.getenv('PORT', 5001))
     
-    # OpenRouter API Configuration
-    OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
-    OPENROUTER_BASE_URL = os.getenv('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
+    # LLM provider. Old OPENROUTER_* names still work if the generic ones are unset.
+    LLM_API_KEY = os.getenv('LLM_API_KEY') or os.getenv('OPENROUTER_API_KEY')
+    LLM_BASE_URL = os.getenv('LLM_BASE_URL') or os.getenv('OPENROUTER_BASE_URL') or 'https://openrouter.ai/api/v1'
+    LLM_PROVIDER = os.getenv('LLM_PROVIDER') or ''
+    OPENROUTER_API_KEY = LLM_API_KEY
+    OPENROUTER_BASE_URL = LLM_BASE_URL
     
     # Model Configuration
-    MODEL = os.getenv('MODEL', 'mistralai/mistral-small-creative')
+    MODEL = os.getenv('MODEL') or ''
     TEMPERATURE = float(os.getenv('TEMPERATURE', '0.7'))
     
     # CORS Configuration
@@ -46,9 +49,11 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     FLASK_ENV = 'production'
-    # Require secret key in production
-    if Config.SECRET_KEY == 'dev-secret-key-change-in-production':
-        raise ValueError('Must set SECRET_KEY environment variable in production')
+
+    def __init__(self):
+        # Require secret key in production
+        if Config.SECRET_KEY == 'dev-secret-key-change-in-production':
+            raise ValueError('Must set SECRET_KEY environment variable in production')
 
 
 class TestingConfig(Config):
