@@ -1,48 +1,43 @@
 """
 Interview API routes
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from functools import wraps
 import asyncio
+import threading
 from app.services.interview_service import interview_service
 
 # Create blueprint (CORS handled globally in app/__init__.py)
 interview_bp = Blueprint('interview', __name__)
 
+# One loop for the process. Flask's async views close their loop after each
+# request, and the shared OpenAI client then dies with "Event loop is closed".
+_loop = None
+_loop_lock = threading.Lock()
+
+
+def _run_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+
+def run_async(coro):
+    global _loop
+    with _loop_lock:
+        if _loop is None or _loop.is_closed():
+            _loop = asyncio.new_event_loop()
+            threading.Thread(target=_run_loop, args=(_loop,), name="interview-loop", daemon=True).start()
+    return asyncio.run_coroutine_threadsafe(coro, _loop).result()
+
 
 def handle_errors(f):
-    """Decorator to handle errors consistently for sync & async routes"""
-
-    @wraps(f)
-    async def async_wrapper(*args, **kwargs):
-        # Handle OPTIONS before calling the async function
-        # Flask-CORS will add headers automatically
-        from flask import request, make_response
-        if request.method == 'OPTIONS':
-            return make_response('', 200)
-        
-        try:
-            result = await f(*args, **kwargs)
-            return result
-        except ValueError as e:
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 400
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return jsonify({
-                'error': 'Internal server error',
-                'details': str(e)
-            }), 500
+    """Decorator to handle errors consistently"""
 
     @wraps(f)
     def sync_wrapper(*args, **kwargs):
-        # Handle OPTIONS before calling the sync function
-        from flask import request, make_response
         if request.method == 'OPTIONS':
             return make_response('', 200)
-        
+
         try:
             return f(*args, **kwargs)
         except ValueError as e:
@@ -57,8 +52,6 @@ def handle_errors(f):
                 'details': str(e)
             }), 500
 
-    if asyncio.iscoroutinefunction(f):
-        return async_wrapper
     return sync_wrapper
 
 
@@ -102,10 +95,11 @@ def create_interview():
     if not data or 'technology' not in data or 'position' not in data:
         return jsonify({'error': 'Missing technology or position'}), 400
 
-    session_id = interview_service.create_session(
-        data['technology'],
-        data['position']
-    )
+    # Build the model client on the long-lived loop, same place later calls run.
+    async def _create():
+        return interview_service.create_session(data['technology'], data['position'])
+
+    session_id = run_async(_create())
 
     return jsonify({
         'session_id': session_id,
@@ -117,76 +111,50 @@ def create_interview():
 
 @interview_bp.route('/interview/<session_id>/start', methods=['POST', 'OPTIONS'])
 @handle_errors
-async def start_interview(session_id):
+def start_interview(session_id):
     """
     Start an interview and get the first question
     """
-    # OPTIONS is handled by @handle_errors decorator
-    # #region agent log
-    try:
-        import json
-        log_data = {
-            "sessionId": "debug-session",
-            "runId": "run1",
-            "hypothesisId": "C",
-            "location": "routes/interview.py:start_interview",
-            "message": "Start interview route called",
-            "data": {
-                "method": request.method,
-                "session_id": session_id,
-                "path": request.path
-            },
-            "timestamp": __import__('time').time() * 1000
-        }
-        with open('/Volumes/Development/Practise/ai-interviewer/.cursor/debug.log', 'a') as f:
-            f.write(json.dumps(log_data) + '\n')
-    except Exception:
-        pass
-    # #endregion
-        
-    result = await interview_service.start_interview(session_id)
+    result = run_async(interview_service.start_interview(session_id))
     return jsonify(result), 200
 
 
 @interview_bp.route('/interview/<session_id>/answer', methods=['POST', 'OPTIONS'])
 @handle_errors
-async def submit_answer(session_id):
+def submit_answer(session_id):
     """
     Submit an answer to the current question
     """
-    # OPTIONS is handled by @handle_errors decorator
     data = request.get_json()
 
     if not data or 'answer' not in data:
         return jsonify({'error': 'Missing answer'}), 400
 
-    result = await interview_service.submit_answer(
+    result = run_async(interview_service.submit_answer(
         session_id,
         data['answer']
-    )
+    ))
 
     return jsonify(result), 200
 
 
 @interview_bp.route('/interview/<session_id>/next-question', methods=['POST', 'OPTIONS'])
 @handle_errors
-async def get_next_question(session_id):
+def get_next_question(session_id):
     """
     Get the next question
     """
-    # OPTIONS is handled by @handle_errors decorator
-    result = await interview_service.get_next_question(session_id)
+    result = run_async(interview_service.get_next_question(session_id))
     return jsonify(result), 200
 
 
 @interview_bp.route('/interview/<session_id>/end', methods=['POST', 'OPTIONS'])
 @handle_errors
-async def end_interview(session_id):
+def end_interview(session_id):
     """
     End the interview and return summary
     """
-    # OPTIONS is handled by @handle_errors decorator
-    result = await interview_service.end_interview(session_id)
+    result = run_async(interview_service.end_interview(session_id))
     return jsonify(result), 200
 
 
@@ -213,3 +181,16 @@ def delete_session(session_id):
     if success:
         return jsonify({'message': 'Session deleted successfully'}), 200
     return jsonify({'error': 'Session not found'}), 404
+
+
+def _check_run_async():
+    async def loop_id():
+        await asyncio.sleep(0)
+        return id(asyncio.get_running_loop())
+
+    assert run_async(loop_id()) == run_async(loop_id())
+
+
+if __name__ == "__main__":
+    _check_run_async()
+    print("run_async ok")
