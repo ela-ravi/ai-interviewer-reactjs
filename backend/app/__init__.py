@@ -97,7 +97,12 @@ def create_app():
     # Health check endpoint
     @app.route('/health')
     def health():
-        return {'status': 'healthy', 'service': 'ai-interviewer-backend'}, 200
+        # Same env override the interview client reads in agents.py.
+        return {
+            'status': 'healthy',
+            'service': 'ai-interviewer-backend',
+            'model': os.getenv('MODEL', 'mistralai/mistral-small-creative'),
+        }, 200
     
     # Test endpoint for production debugging
     @app.route('/api/test')
