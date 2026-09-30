@@ -47,6 +47,7 @@ class InterviewService:
     
     def __init__(self):
         self.sessions: Dict[str, InterviewSession] = {}
+        self._starting: Dict[str, asyncio.Task] = {}
         # Get session timeout from environment or default to 2 hours
         timeout_hours = int(os.getenv('SESSION_TIMEOUT_HOURS', '2'))
         self.session_timeout = timedelta(hours=timeout_hours)
@@ -79,20 +80,39 @@ class InterviewService:
         return session
     
     async def start_interview(self, session_id: str) -> Dict:
-        """Start an interview and get the first question"""
+        """Return the first question. A second call reuses it instead of asking again."""
         session = self.get_session(session_id)
         if not session:
             raise ValueError("Session not found")
-        
-        session.current_question_number = 1
-        question = await session.agents.get_next_question(1)
-        session.current_question = question
-        
+
+        if session.current_question_number == 1 and session.current_question:
+            return {
+                'session_id': session_id,
+                'question_number': 1,
+                'question': session.current_question,
+            }
+
+        task = self._starting.get(session_id)
+        if task is None:
+            task = asyncio.create_task(self._generate_first_question(session))
+            self._starting[session_id] = task
+        try:
+            question = await task
+        finally:
+            if self._starting.get(session_id) is task and task.done():
+                self._starting.pop(session_id, None)
+
         return {
             'session_id': session_id,
             'question_number': 1,
-            'question': question
+            'question': question,
         }
+
+    async def _generate_first_question(self, session: InterviewSession) -> str:
+        question = await session.agents.get_next_question(1)
+        session.current_question_number = 1
+        session.current_question = question
+        return question
     
     async def submit_answer(self, session_id: str, answer: str) -> Dict:
         """Submit an answer and get feedback and score"""

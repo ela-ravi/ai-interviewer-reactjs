@@ -103,8 +103,6 @@ function InterviewSetup({ onStart }) {
         key,
       );
 
-      await interviewAPI.startInterview(result.session_id);
-
       const chosen = providers.find((item) => item.id === provider);
       onStart(result.session_id, technology, position, chosen?.label || provider, result.model);
     } catch (err) {
