@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, make_response
 from functools import wraps
 import asyncio
 import threading
+from app.providers import public_providers, resolve
 from app.services.interview_service import interview_service
 
 # Create blueprint (CORS handled globally in app/__init__.py)
@@ -57,6 +58,13 @@ def handle_errors(f):
 
 # -------------------- ROUTES -------------------- #
 
+@interview_bp.route('/providers', methods=['GET', 'OPTIONS'])
+@handle_errors
+def list_providers():
+    """Provider catalog for the setup form. No keys, no base URLs."""
+    return jsonify({'providers': public_providers()}), 200
+
+
 @interview_bp.route('/interview/create', methods=['POST', 'OPTIONS'])
 @handle_errors
 def create_interview():
@@ -95,17 +103,30 @@ def create_interview():
     if not data or 'technology' not in data or 'position' not in data:
         return jsonify({'error': 'Missing technology or position'}), 400
 
+    provider = (data.get('provider') or '').strip()
+    api_key = (data.get('api_key') or '').strip()
+    if not provider or not api_key:
+        return jsonify({'error': 'Missing provider or api_key'}), 400
+
+    resolved = resolve(provider, data.get('model'))
+
     # Build the model client on the long-lived loop, same place later calls run.
+    # The key stays on the session client and is not returned.
     async def _create():
-        return interview_service.create_session(data['technology'], data['position'])
+        return interview_service.create_session(
+            data['technology'],
+            data['position'],
+            api_key,
+            resolved['base_url'],
+            resolved['model'],
+        )
 
     session_id = run_async(_create())
 
     return jsonify({
         'session_id': session_id,
-        'technology': data['technology'],
-        'position': data['position'],
-        'message': 'Interview session created successfully'
+        'provider': provider,
+        'model': resolved['model'],
     }), 201
 
 

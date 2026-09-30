@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import InterviewSetup from './components/InterviewSetup'
 import Interview from './components/Interview'
-import { checkHealth } from './services/api'
 import './App.css'
 
 function App() {
@@ -10,23 +9,18 @@ function App() {
   const [modelName, setModelName] = useState(null)
   const [providerName, setProviderName] = useState(null)
 
-  useEffect(() => {
-    checkHealth()
-      .then((data) => {
-        setModelName(data?.model || null)
-        setProviderName(data?.provider || null)
-      })
-      .catch(() => {})
-  }, [])
-
-  const handleStartInterview = (sessionId, technology, position) => {
+  const handleStartInterview = (sessionId, technology, position, provider, model) => {
     setSessionId(sessionId)
     setInterviewData({ technology, position })
+    setProviderName(provider || null)
+    setModelName(model || null)
   }
 
   const handleResetInterview = () => {
     setSessionId(null)
     setInterviewData(null)
+    setProviderName(null)
+    setModelName(null)
   }
 
   return (

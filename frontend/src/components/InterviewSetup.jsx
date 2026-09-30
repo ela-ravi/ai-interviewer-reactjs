@@ -1,33 +1,57 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { interviewAPI } from '../services/api';
 import './InterviewSetup.css';
 
 function InterviewSetup({ onStart }) {
   const [technology, setTechnology] = useState('');
   const [position, setPosition] = useState('');
+  const [providers, setProviders] = useState([]);
+  const [provider, setProvider] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    interviewAPI.getProviders()
+      .then((data) => {
+        const list = data?.providers || [];
+        setProviders(list);
+        if (list[0]) {
+          setProvider(list[0].id);
+        }
+      })
+      .catch(() => setError('Could not load providers. Is the backend running?'));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!technology.trim() || !position.trim()) {
-      setError('Please fill in both fields');
+    if (!technology.trim() || !position.trim() || !provider || !apiKey.trim()) {
+      setError('Please fill in every field, including your API key');
       return;
     }
 
     setLoading(true);
     setError(null);
+    const key = apiKey.trim();
+    // Developer override, set in the browser console:
+    // localStorage.setItem('interviewModel', 'openai/gpt-oss-20b')
+    const modelOverride = (window.localStorage.getItem('interviewModel') || '').trim();
 
     try {
-      // Create interview session
-      const result = await interviewAPI.createInterview(technology, position);
-      
-      // Start the interview
+      const result = await interviewAPI.createInterview(
+        technology,
+        position,
+        provider,
+        modelOverride,
+        key,
+      );
+      setApiKey('');
+
       await interviewAPI.startInterview(result.session_id);
-      
-      // Notify parent component
-      onStart(result.session_id, technology, position);
+
+      const chosen = providers.find((item) => item.id === provider);
+      onStart(result.session_id, technology, position, chosen?.label || provider, result.model);
     } catch (err) {
       console.error('Error starting interview:', err);
       setError(err.response?.data?.error || 'Failed to start interview. Please try again.');
@@ -41,14 +65,14 @@ function InterviewSetup({ onStart }) {
       <div className="setup-card">
         <h2>👋 Welcome to AI Interviewer!</h2>
         
-        <div className="info-box">
-          <h3>How it works:</h3>
+        <details className="info-box">
+          <summary>Curious on How it works!</summary>
           <ul>
             <li>🎤 <strong>Interviewer Agent</strong> - Asks relevant technical questions</li>
             <li>👨‍🏫 <strong>Coach Agent</strong> - Provides feedback on your answers</li>
             <li>📊 <strong>Scorer Agent</strong> - Evaluates your performance</li>
           </ul>
-        </div>
+        </details>
 
         <form onSubmit={handleSubmit} className="setup-form">
           <div className="form-group">
@@ -75,6 +99,39 @@ function InterviewSetup({ onStart }) {
               value={position}
               onChange={(e) => setPosition(e.target.value)}
               placeholder="e.g., Senior Developer, Data Scientist"
+              disabled={loading}
+            />
+          </div>
+
+          {providers.length > 1 && (
+            <div className="form-group">
+              <label htmlFor="provider">
+                Provider
+              </label>
+              <select
+                id="provider"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                disabled={loading}
+              >
+                {providers.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="apiKey">
+              API key
+            </label>
+            <input
+              id="apiKey"
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Paste your Groq API key"
+              autoComplete="off"
               disabled={loading}
             />
           </div>

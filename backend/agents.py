@@ -5,26 +5,42 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from typing import Dict, List, Tuple
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
+def parse_score(text: str) -> Tuple[int, str]:
+    """Read SCORE: N from a scorer reply. Markdown bold is ignored."""
+    cleaned = re.sub(r'\*\*', '', text or '')
+    match = re.search(r'SCORE:\s*(\d+)', cleaned, re.IGNORECASE)
+    if not match:
+        return 5, cleaned
+    score = max(0, min(10, int(match.group(1))))
+    return score, cleaned
+
+
 class InterviewAgents:
     """Manages all AI agents for the interview process"""
     
-    def __init__(self, technology: str, position: str):
+    def __init__(self, technology: str, position: str, api_key: str, base_url: str, model: str):
         self.technology = technology
         self.position = position
-        
-        # LLM_API_KEY / LLM_BASE_URL, with the old OpenRouter names as fallback.
-        model = os.getenv("MODEL") or ""
+
+        api_key = (api_key or "").strip()
+        base_url = (base_url or "").strip()
+        model = (model or "").strip()
+        if not api_key:
+            raise ValueError("API key is required")
+        if not base_url:
+            raise ValueError("Base URL is required")
         if not model:
-            raise ValueError("MODEL is not set")
+            raise ValueError("Model is required")
         self.model_client = OpenAIChatCompletionClient(
             model=model,
-            api_key=os.getenv("LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY"),
-            base_url=os.getenv("LLM_BASE_URL") or os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1",
+            api_key=api_key,
+            base_url=base_url,
             # Providers bill the model's full output window unless this is set.
             max_tokens=int(os.getenv("MAX_TOKENS", "2048")),
             model_info={
@@ -197,20 +213,8 @@ Please evaluate and score this answer."""
         )
         
         score_response = response.chat_message.content
-        
-        # Parse score from response
-        score = 0
-        justification = score_response
-        
-        try:
-            if "SCORE:" in score_response:
-                score_line = [line for line in score_response.split('\n') if 'SCORE:' in line][0]
-                score_str = score_line.split('SCORE:')[1].strip().split('/')[0].strip()
-                score = int(score_str)
-        except:
-            score = 5  # Default score if parsing fails
-        
-        return score, score_response
+        score, cleaned = parse_score(score_response)
+        return score, cleaned
     
     async def process_answer(self, question: str, answer: str, question_number: int) -> Dict:
         """
@@ -289,4 +293,17 @@ Include strengths and areas for improvement."""
             'summary': overall_feedback,
             'history': self.interview_history
         }
+
+
+def _check_parse_score():
+    assert parse_score('**SCORE:** 8/10\n**JUSTIFICATION:** solid') == (
+        8, 'SCORE: 8/10\nJUSTIFICATION: solid'
+    )
+    assert parse_score('SCORE: **7/10**')[0] == 7
+    assert parse_score('no score here')[0] == 5
+
+
+if __name__ == '__main__':
+    _check_parse_score()
+    print('parse_score ok')
 

@@ -15,7 +15,6 @@ def create_app():
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-    app.config['OPENROUTER_API_KEY'] = os.getenv('OPENROUTER_API_KEY')
     
     # Get CORS configuration
     cors_origins = os.getenv('CORS_ORIGINS', '')
@@ -97,12 +96,9 @@ def create_app():
     # Health check endpoint
     @app.route('/health')
     def health():
-        # Same env override the interview client reads in agents.py.
         return {
             'status': 'healthy',
             'service': 'ai-interviewer-backend',
-            'model': os.getenv('MODEL') or '',
-            'provider': os.getenv('LLM_PROVIDER') or '',
         }, 200
     
     # Test endpoint for production debugging
@@ -136,6 +132,7 @@ def create_app():
                 'endpoints': {
                     'health': '/health',
                     'test': '/api/test',
+                    'providers': '/api/providers',
                     'create_interview': '/api/interview/create',
                     'start_interview': '/api/interview/<session_id>/start',
                     'submit_answer': '/api/interview/<session_id>/answer',
@@ -144,11 +141,6 @@ def create_app():
                     'get_session': '/api/interview/<session_id>',
                 }
             },
-            'model': {
-                'provider': os.getenv('LLM_PROVIDER') or '',
-                'model': os.getenv('MODEL') or '',
-                'api_key_configured': bool(os.getenv('LLM_API_KEY') or os.getenv('OPENROUTER_API_KEY'))
-            }
         }), 200
     
     return app

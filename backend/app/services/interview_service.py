@@ -16,11 +16,11 @@ from agents import InterviewAgents
 class InterviewSession:
     """Represents an active interview session"""
     
-    def __init__(self, session_id: str, technology: str, position: str):
+    def __init__(self, session_id: str, technology: str, position: str, api_key: str, base_url: str, model: str):
         self.session_id = session_id
         self.technology = technology
         self.position = position
-        self.agents = InterviewAgents(technology, position)
+        self.agents = InterviewAgents(technology, position, api_key, base_url, model)
         self.created_at = datetime.now()
         self.last_activity = datetime.now()
         self.current_question_number = 0
@@ -61,12 +61,12 @@ class InterviewService:
         for sid in expired:
             del self.sessions[sid]
     
-    def create_session(self, technology: str, position: str) -> str:
-        """Create a new interview session"""
+    def create_session(self, technology: str, position: str, api_key: str, base_url: str, model: str) -> str:
+        """Create a new interview session. The key lives only on this session's client."""
         self._cleanup_expired_sessions()
         
         session_id = str(uuid.uuid4())
-        session = InterviewSession(session_id, technology, position)
+        session = InterviewSession(session_id, technology, position, api_key, base_url, model)
         self.sessions[session_id] = session
         
         return session_id
@@ -144,13 +144,15 @@ class InterviewService:
         
         session.is_active = False
         summary = await session.agents.get_overall_summary()
-        
-        return {
+        result = {
             'session_id': session_id,
             'technology': session.technology,
             'position': session.position,
             'summary': summary
         }
+        # Drop the session so the key does not sit until the timeout.
+        self.delete_session(session_id)
+        return result
     
     def get_session_info(self, session_id: str) -> Dict:
         """Get session information"""
