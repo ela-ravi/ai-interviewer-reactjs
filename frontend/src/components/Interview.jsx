@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { interviewAPI } from '../services/api';
 import QuestionCard from './QuestionCard';
 import AnswerForm from './AnswerForm';
@@ -16,8 +16,12 @@ function Interview({ sessionId, technology, position, onReset }) {
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
   const [stats, setStats] = useState({ answered: 0, avgScore: 0 });
+  const startedFor = useRef(null);
 
   useEffect(() => {
+    // Strict Mode runs this effect twice in dev. The second run must not ask again.
+    if (startedFor.current === sessionId) return;
+    startedFor.current = sessionId;
     loadFirstQuestion();
   }, [sessionId]);
 

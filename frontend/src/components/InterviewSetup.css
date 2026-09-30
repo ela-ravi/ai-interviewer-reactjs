@@ -10,8 +10,10 @@
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 3rem;
-  max-width: 600px;
   width: 100%;
+  max-width: 600px;
+  /* Stay 600px (or the screen, if narrower). Opening the accordion must not resize it. */
+  min-width: min(100%, 600px);
 }
 
 .setup-card h2 {
@@ -27,12 +29,19 @@
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
+  contain: inline-size;
 }
 
-.info-box h3 {
+.info-box summary {
   color: var(--primary-dark);
-  margin-bottom: 1rem;
   font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.info-box[open] summary {
+  margin-bottom: 1rem;
 }
 
 .info-box ul {
@@ -64,21 +73,77 @@
   font-size: 1rem;
 }
 
-.form-group input {
+.field-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.key-help {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.key-help summary {
+  color: var(--primary-color);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.key-help[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.key-help-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111;
+}
+
+.video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.key-help-link {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
   padding: 0.875rem 1rem;
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.3s ease;
+  background: var(--card-bg);
+  width: 100%;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(31, 119, 180, 0.1);
 }
 
-.form-group input:disabled {
+.form-group input:disabled,
+.form-group select:disabled {
   background-color: #f5f5f5;
   cursor: not-allowed;
 }
@@ -119,8 +184,26 @@
 }
 
 @media (max-width: 768px) {
+  main.container:has(.interview-setup) {
+    padding: 0;
+    margin: 0;
+  }
+
+  .interview-setup {
+    min-height: 0;
+    align-items: stretch;
+    width: 100%;
+    margin: 0;
+  }
+
   .setup-card {
-    padding: 2rem 1.5rem;
+    max-width: none;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.5rem 1.25rem;
   }
 
   .setup-card h2 {
@@ -129,6 +212,10 @@
 
   .info-box {
     padding: 1rem;
+  }
+
+  .key-help {
+    padding: 0.75rem;
   }
 }
 

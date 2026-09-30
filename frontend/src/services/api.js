@@ -22,8 +22,13 @@ const api = axios.create({
 
 // Interview API functions
 export const interviewAPI = {
-  // Create a new interview session
-  createInterview: async (technology, position) => {
+  getProviders: async () => {
+    const response = await api.get('/providers');
+    return response.data;
+  },
+
+  // Create a new interview session. apiKey is sent once and not stored here.
+  createInterview: async (technology, position, provider, model, apiKey) => {
     // #region agent log
     const logData = {
       sessionId: 'debug-session',
@@ -49,6 +54,9 @@ export const interviewAPI = {
     const response = await api.post('/interview/create', {
       technology,
       position,
+      provider,
+      model,
+      api_key: apiKey,
     });
     return response.data;
   },
@@ -90,16 +98,6 @@ export const interviewAPI = {
     const response = await api.delete(`/interview/${sessionId}`);
     return response.data;
   },
-};
-
-// Health check
-export const checkHealth = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL.replace('/api', '')}/health`);
-    return response.data;
-  } catch (error) {
-    throw new Error('Backend is not available');
-  }
 };
 
 export default api;
