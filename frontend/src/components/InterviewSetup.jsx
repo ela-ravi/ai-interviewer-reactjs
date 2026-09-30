@@ -2,12 +2,68 @@ import { useEffect, useState } from 'react';
 import { interviewAPI } from '../services/api';
 import './InterviewSetup.css';
 
+const API_KEY_STORAGE = 'interviewApiKey';
+// Paste a YouTube watch, share, or embed link.
+const GROQ_KEY_VIDEO_URL = 'https://www.youtube.com/watch?v=X3_nJyuksqU';
+
+function youtubeEmbedUrl(pageUrl) {
+  const raw = (pageUrl || '').trim();
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.replace(/^www\./, '');
+    let id = '';
+    if (host === 'youtu.be') {
+      id = url.pathname.split('/').filter(Boolean)[0] || '';
+    } else if (host === 'youtube.com' || host === 'youtube-nocookie.com' || host === 'm.youtube.com') {
+      if (url.pathname === '/watch') {
+        id = url.searchParams.get('v') || '';
+      } else {
+        const parts = url.pathname.split('/').filter(Boolean);
+        const marker = parts.findIndex((part) => part === 'embed' || part === 'shorts' || part === 'live');
+        id = marker >= 0 ? parts[marker + 1] || '' : '';
+      }
+    }
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return '';
+    return `https://www.youtube-nocookie.com/embed/${id}`;
+  } catch {
+    return '';
+  }
+}
+
+const GROQ_KEY_VIDEO_EMBED = youtubeEmbedUrl(GROQ_KEY_VIDEO_URL);
+
+function readSavedApiKey() {
+  try {
+    // Drop any key saved by the earlier localStorage version.
+    window.localStorage.removeItem(API_KEY_STORAGE);
+    return (window.sessionStorage.getItem(API_KEY_STORAGE) || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+function rememberApiKey(value) {
+  try {
+    window.localStorage.removeItem(API_KEY_STORAGE);
+    const trimmed = value.trim();
+    if (trimmed) {
+      window.sessionStorage.setItem(API_KEY_STORAGE, trimmed);
+    } else {
+      window.sessionStorage.removeItem(API_KEY_STORAGE);
+    }
+  } catch {
+    // Private mode can block storage. The field still works for this visit.
+  }
+}
+
 function InterviewSetup({ onStart }) {
   const [technology, setTechnology] = useState('');
   const [position, setPosition] = useState('');
   const [providers, setProviders] = useState([]);
   const [provider, setProvider] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(readSavedApiKey);
+  const [showKeyVideo, setShowKeyVideo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -46,7 +102,6 @@ function InterviewSetup({ onStart }) {
         modelOverride,
         key,
       );
-      setApiKey('');
 
       await interviewAPI.startInterview(result.session_id);
 
@@ -84,7 +139,7 @@ function InterviewSetup({ onStart }) {
               type="text"
               value={technology}
               onChange={(e) => setTechnology(e.target.value)}
-              placeholder="e.g., Python, JavaScript, Machine Learning"
+              placeholder="e.g., Python, MBD(Automotive), JavaScript, Machine Learning, SIL, MIL, etc..,"
               disabled={loading}
             />
           </div>
@@ -129,11 +184,49 @@ function InterviewSetup({ onStart }) {
               id="apiKey"
               type="password"
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => {
+                setApiKey(e.target.value);
+                rememberApiKey(e.target.value);
+              }}
               placeholder="Paste your Groq API key"
               autoComplete="off"
               disabled={loading}
             />
+            <p className="field-hint">
+              {apiKey.trim()
+                ? 'Kept for this tab only. Close the tab to forget it.'
+                : 'Used for this tab only. It is not saved on this device.'}
+            </p>
+            <details className="key-help" open={showKeyVideo}>
+              <summary
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowKeyVideo((open) => !open);
+                }}
+              >
+                How to get a Groq API key
+              </summary>
+              <div className="key-help-body">
+                {showKeyVideo && GROQ_KEY_VIDEO_EMBED && (
+                  <div className="video-frame">
+                    <iframe
+                      src={GROQ_KEY_VIDEO_EMBED}
+                      title="How to get a Groq API key"
+                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+                <a
+                  className="key-help-link"
+                  href="https://console.groq.com/keys"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open the Groq console
+                </a>
+              </div>
+            </details>
           </div>
 
           {error && (

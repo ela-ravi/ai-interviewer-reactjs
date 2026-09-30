@@ -26,7 +26,7 @@ A technical interview app. A React frontend talks to a Flask backend, and the ba
    npm install
    ```
 
-No API key goes in `.env`. You paste a Groq key in the form when you start an interview. Get one at https://console.groq.com/keys
+No API key goes in `.env`. Each person pastes their own Groq key. It stays in that browser tab until the tab is closed. Get one at https://console.groq.com/keys
 
 ## Run
 
@@ -48,7 +48,7 @@ npm run dev
 
 1. Enter the technology (for example Python or JavaScript)
 2. Enter the position (for example Senior Developer)
-3. Paste your Groq API key
+3. Paste your Groq API key (kept for this tab only)
 4. Start the interview and answer one question at a time
 5. Read the coach feedback and the score after each answer
 6. End the interview to see the summary
